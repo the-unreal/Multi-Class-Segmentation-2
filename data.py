@@ -15,14 +15,12 @@ IMG_SIZE = 128
 N_CHANNELS = 3
 N_CLASSES = 151 # 150 classes + "not labelled"
 
-def create_source_dataset():
+def create_source_dataset(dataset_path, training_data, val_data):
+  TRAINSET_SIZE = len(glob(dataset_path + training_data + "*.jpg"))
+  print(f"The Training Dataset contains {TRAINSET_SIZE} images.")
 
-
-TRAINSET_SIZE = len(glob(dataset_path + training_data + "*.jpg"))
-print(f"The Training Dataset contains {TRAINSET_SIZE} images.")
-
-VALSET_SIZE = len(glob(dataset_path + val_data + "*.jpg"))
-print(f"The Validation Dataset contains {VALSET_SIZE} images.")
+  VALSET_SIZE = len(glob(dataset_path + val_data + "*.jpg"))
+  print(f"The Validation Dataset contains {VALSET_SIZE} images.")
 
 def parse_image(img_path: str) -> dict:
   """Load an image and its annotation (mask) and returning
@@ -38,8 +36,12 @@ def parse_image(img_path: str) -> dict:
   dict
     Dictionary mapping an image and its annotation.
   """
+  for i in os.listdir(img_path):
+    img_path = os.path.join(img_path, i)
+    break
+
   image = tf.io.read_file(img_path)
-  image = tf.image.decode_jpeg(image, channels=3)
+  image = tf.io.decode_jpeg(image, channels=3)
   image = tf.image.convert_image_dtype(image, tf.uint8)
 
   # For one Image path:
@@ -50,7 +52,7 @@ def parse_image(img_path: str) -> dict:
   mask_path = tf.strings.regex_replace(mask_path, "jpg", "png")
   mask = tf.io.read_file(mask_path)
   # The masks contain a class index for each pixels
-  mask = tf.image.decode_png(mask, channels=1)
+  mask = tf.io.decode_png(mask, channels=1)
   # In scene parsing, "not labeled" = 255
   # But it will mess up with our N_CLASS = 150
   # Since 255 means the 255th class
@@ -59,10 +61,13 @@ def parse_image(img_path: str) -> dict:
   # Note that we have to convert the new value (0)
   # With the same dtype than the tensor itself
 
-  return {'image': image, 'segmentation_mask': mask}
+  print('image', image, 'segmentation_mask', mask)
+  #return {'image': image, 'segmentation_mask': mask}
 
 if __name__ == "__main__":
     
-  dataset_path = "data/Training/images/"
+  dataset_path = "/content/data/Training/images/"
   training_data = "training/"
   val_data = "validation/"
+  create_source_dataset(dataset_path, training_data, val_data)
+  parse_image(os.path.join(dataset_path, training_data))
